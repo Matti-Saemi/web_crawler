@@ -6,27 +6,22 @@ import { getAbsoluteUrl } from './helpers/url';
 
 class Crawler {
     private static assetExtentions = ["ico", "css", " css2", "png", "jpg", "js"];
-    private baseUrl!: string;
 
-    public constructor(url: string) {
-        this.baseUrl = url;
-    }
-
-    public getAllStaticAssetsForPage(): Promise<StaticAssets> {
-        return fetch(this.baseUrl).then(async res => {
+    public static getAllStaticAssetsForPage(baseUrl: string): Promise<StaticAssets> {
+        return fetch(baseUrl).then(async res => {
             const html = await res.text();
             const $ = load(html);
     
             return {
-                images: this.getAllImages($),
-                scripts: this.getAllScripts($),
-                others:  this.getAllOtherFiles($),
+                images: Crawler.getAllImages($, baseUrl),
+                scripts: Crawler.getAllScripts($, baseUrl),
+                others:  Crawler.getAllOtherFiles($, baseUrl),
             }
         });
     }
     
-    public getSiteMap(): Promise<string[]> {
-        return fetch(this.baseUrl).then(async res => {
+    public static getSiteMap(baseUrl: string): Promise<string[]> {
+        return fetch(baseUrl).then(async res => {
             const html = await res.text() 
             const $ = load(html);
 
@@ -36,7 +31,7 @@ class Crawler {
                 const href = $(element).attr('href');
     
                 if(href && 
-                    (href.includes(this.baseUrl) || href.substring(0, 1) === '/')) {
+                    (href.includes(baseUrl) || href.substring(0, 1) === '/')) {
                     list.push(href);
                 }
             });
@@ -45,12 +40,12 @@ class Crawler {
                 .filter((link, ind) => 
                     list.indexOf(link) === ind)
                 .map(link => {
-                    return getAbsoluteUrl(link, this.baseUrl);
+                    return getAbsoluteUrl(link, baseUrl);
                 });
         });
     }
 
-    private getAllImages($: CheerioAPI) {
+    private static getAllImages($: CheerioAPI, baseUrl: string) {
         const allPath: string[] = [];
 
         try {
@@ -58,7 +53,7 @@ class Crawler {
             ele.each((ind, element) => {
                 const src = $(element).attr('src') || $(element).attr('data-src');
                 if(src !== undefined) {
-                    allPath.push(getAbsoluteUrl(src, this.baseUrl));
+                    allPath.push(getAbsoluteUrl(src, baseUrl));
                 }
             });
         
@@ -69,14 +64,14 @@ class Crawler {
         return allPath;
     }
 
-    private getAllScripts($: CheerioAPI) {
+    private static getAllScripts($: CheerioAPI, baseUrl: string) {
         const allPath: string[] = [];
         try {
             const ele = $('script');
             ele.each((ind, element) => {
                 const src = $(element).attr('src');
                 if(src !== undefined) {
-                    allPath.push(getAbsoluteUrl(src, this.baseUrl));
+                    allPath.push(getAbsoluteUrl(src, baseUrl));
                 }
             });
         } catch(err) {
@@ -85,17 +80,17 @@ class Crawler {
         return allPath;
     }
 
-    private getAllOtherFiles($: CheerioAPI) {
+    private static getAllOtherFiles($: CheerioAPI, baseUrl: string) {
         const links: string[] = [];
         try {
             const ele = $('link');
             ele.each((ind, element) => {
                 const src = $(element).attr('href');
                 if(src !== undefined 
-                    && src !== this.baseUrl 
-                    && src !== (this.baseUrl + "/")) {
+                    && src !== baseUrl 
+                    && src !== (baseUrl + "/")) {
                         if (new RegExp(Crawler.assetExtentions.join("|")).test(src)) {
-                            links.push(getAbsoluteUrl(src, this.baseUrl));
+                            links.push(getAbsoluteUrl(src, baseUrl));
                         }
                 }
             });
