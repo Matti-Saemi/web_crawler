@@ -16,6 +16,7 @@ npm install
 ```
 
 To run the program
+Add the url that you wish to crawl to `urlToCrawl` variable in `/src/index.ts` to replace the exiting example. 
 ```
 npm start
 ```
